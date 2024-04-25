@@ -15,6 +15,7 @@ export const useFetch = <T>(url: string, queryParams?: QueryParams, extraOptions
     const [error, setError] = useState<null | string>(null)
     const [loading, setLoading] = useState(true)
     const controller = useRef<AbortController>()
+    const timeout = useRef<number>()
 
     const fullUrl = useMemo(() => {
         const newUrl = new URL(url)
@@ -27,6 +28,21 @@ export const useFetch = <T>(url: string, queryParams?: QueryParams, extraOptions
 
     const onAbort = () => controller.current && controller.current.abort();
 
+    const fetchPromise = new Promise((res, rej) => {
+        if (extraOptions?.timeout) {
+            timeout.current = setTimeout(() => {
+                rej('Timeout')
+                onAbort()
+            }, extraOptions.timeout)
+        }
+        fetch(fullUrl, { signal: controller.current?.signal }).then(response => {
+            if (timeout.current) clearTimeout(timeout.current)
+            res(response)
+        }).catch((err) => {
+            rej(err)
+        })
+    })
+
 
     const fetchData = useCallback(async () => {
         setData(null)
@@ -34,9 +50,10 @@ export const useFetch = <T>(url: string, queryParams?: QueryParams, extraOptions
         setLoading(true)
         controller.current = new AbortController();
         try {
-            const response = await fetch(fullUrl, { signal: controller.current.signal })
+            const response = await fetchPromise
             const fetchedData = await response.json()
             setData(fetchedData)
+
         } catch (e: unknown) {
             if (typeof e === "string") {
                 setError(e)
@@ -49,10 +66,11 @@ export const useFetch = <T>(url: string, queryParams?: QueryParams, extraOptions
     }, [url])
 
     useEffect(() => {
+
         return () => {
             extraOptions?.shouldCancelOnUnmount && controller.current && controller.current.abort();
         }
-    },[])
+    }, [])
 
     return { data, error, loading, fetchData, onAbort }
 }
