@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 
 type QueryParams = {
-    [key: string]: string | number | boolean
+    [key: string]: string
 }
 
 type ExtraOptionsParams = {
@@ -14,25 +14,33 @@ export const useFetch = <T>(url: string, queryParams?: QueryParams, extraOptions
     const [data, setData] = useState<T | null>(null)
     const [error, setError] = useState<null | string>(null)
     const [loading, setLoading] = useState(true)
+    const fullUrl = useMemo(() => {
+        const newUrl = new URL(url)
+        const keyValuePairs = Object.entries(queryParams || {})
+        keyValuePairs.forEach(([key, value]) => {
+            newUrl.searchParams.append(key, value)
+        })
+        return newUrl
+    }, [url])
 
-        const fetchData = useCallback(async () => {
-            setData(null)
-            setError(null)
+    const fetchData = useCallback(async () => {
+        setData(null)
+        setError(null)
 
-            try {
-                const response = await fetch(url)
-                const fetchedData = await response.json()
-                setData(fetchedData)
-            } catch (e: unknown) {
-                if (typeof e === "string") {
-                    setError(e)
-                } else if (e instanceof Error) {
-                    setError(e.message)
-                }
-            } finally {
-                setLoading(false)
+        try {
+            const response = await fetch(fullUrl)
+            const fetchedData = await response.json()
+            setData(fetchedData)
+        } catch (e: unknown) {
+            if (typeof e === "string") {
+                setError(e)
+            } else if (e instanceof Error) {
+                setError(e.message)
             }
-        },[url])
+        } finally {
+            setLoading(false)
+        }
+    }, [url])
 
     return { data, error, loading, fetchData }
 }

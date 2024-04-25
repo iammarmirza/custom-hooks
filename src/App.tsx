@@ -2,7 +2,10 @@ import './App.css'
 import { useFetch } from './hooks/useFetch'
 
 function App() {
-  const myFetch = useFetch('https://api.jikan.moe/v4/anime?q=Naruto&sfw')
+  const myFetch = useFetch('https://api.jikan.moe/v4/anime', {
+    q : 'Naruto',
+    page: '1'
+  })
   const {data, error, loading, fetchData} = myFetch
   console.log('data', data)
   console.log('error', error)
