@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 
 type QueryParams = {
     [key: string]: string
@@ -14,6 +14,8 @@ export const useFetch = <T>(url: string, queryParams?: QueryParams, extraOptions
     const [data, setData] = useState<T | null>(null)
     const [error, setError] = useState<null | string>(null)
     const [loading, setLoading] = useState(true)
+    const controller = useRef<AbortController>()
+
     const fullUrl = useMemo(() => {
         const newUrl = new URL(url)
         const keyValuePairs = Object.entries(queryParams || {})
@@ -23,12 +25,16 @@ export const useFetch = <T>(url: string, queryParams?: QueryParams, extraOptions
         return newUrl
     }, [url])
 
+    const onAbort = () => controller.current && controller.current.abort();
+
+
     const fetchData = useCallback(async () => {
         setData(null)
         setError(null)
-
+        setLoading(true)
+        controller.current = new AbortController();
         try {
-            const response = await fetch(fullUrl)
+            const response = await fetch(fullUrl, { signal: controller.current.signal })
             const fetchedData = await response.json()
             setData(fetchedData)
         } catch (e: unknown) {
@@ -42,5 +48,11 @@ export const useFetch = <T>(url: string, queryParams?: QueryParams, extraOptions
         }
     }, [url])
 
-    return { data, error, loading, fetchData }
+    useEffect(() => {
+        return () => {
+            extraOptions?.shouldCancelOnUnmount && controller.current && controller.current.abort();
+        }
+    },[])
+
+    return { data, error, loading, fetchData, onAbort }
 }
