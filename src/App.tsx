@@ -5,7 +5,7 @@ import { useFetch } from './hooks/useFetch'
 function App() {
   const myFetch = useFetch('https://api.jikan.moe/v4/anime', {
     q: 'Naruto',
-    page: '1'
+    page: 1
   },
     {
       shouldCancelOnUnmount: true

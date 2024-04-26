@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 
 type QueryParams = {
-    [key: string]: string
+    [key: string]: string | number | boolean
 }
 
 type ExtraOptionsParams = {
@@ -21,7 +21,7 @@ export const useFetch = <T>(url: string, queryParams?: QueryParams, extraOptions
         const newUrl = new URL(url)
         const keyValuePairs = Object.entries(queryParams || {})
         keyValuePairs.forEach(([key, value]) => {
-            newUrl.searchParams.append(key, value)
+            newUrl.searchParams.append(key, value.toString())
         })
         return newUrl
     }, [url])
