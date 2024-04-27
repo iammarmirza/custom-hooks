@@ -1,0 +1,8 @@
+.toast {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: screen;
+    align-items: center;
+    height: screen;
+}
